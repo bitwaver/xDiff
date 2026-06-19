@@ -127,7 +127,6 @@ CompareWithLeft(RightPath) {
     ; Launch Meld diff tool
     MeldPath := "E:\Program Files\Meld\Meld.exe"
     If FileExist(MeldPath) {
-        TrayTip(Lang.TrayComparing, Lang.TrayCompareTitle)
         Try {
             Run('"' MeldPath '" "' LeftPath '" "' RightPath '"')
         } Catch Error as err {
