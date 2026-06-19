@@ -58,6 +58,7 @@ Global ConfigFile := A_ScriptDir "\config.ini"
 ; Initialize config if not exists
 If !FileExist(ConfigFile) {
     IniWrite("", ConfigFile, "Settings", "DiffTool")
+    IniWrite("", ConfigFile, "Settings", "History")
     IniWrite("", ConfigFile, "State", "LeftPath")
 }
 
@@ -218,7 +219,35 @@ ShowGUI() {
     MyGui.Add("GroupBox", "w450 h120", Lang.GuiConfigGroup)
     
     CurrentTool := IniRead(ConfigFile, "Settings", "DiffTool", "")
-    ToolEdit := MyGui.Add("Edit", "xp+20 yp+30 w320 r1 ReadOnly", CurrentTool)
+    HistoryStr := IniRead(ConfigFile, "Settings", "History", "")
+    
+    ; Parse history list
+    HistoryList := []
+    If (HistoryStr != "") {
+        Loop Parse, HistoryStr, "|" {
+            If (A_LoopField != "") {
+                HistoryList.Push(A_LoopField)
+            }
+        }
+    }
+    
+    ; Ensure current tool is in the list
+    HasCurrent := False
+    For Item in HistoryList {
+        If (Item = CurrentTool) {
+            HasCurrent := True
+            Break
+        }
+    }
+    If (!HasCurrent && CurrentTool != "") {
+        HistoryList.Push(CurrentTool)
+    }
+    
+    ; Add ComboBox instead of Edit
+    ToolCombo := MyGui.Add("ComboBox", "xp+20 yp+30 w320 r5 vToolCombo", HistoryList)
+    ToolCombo.Text := CurrentTool
+    ToolCombo.OnEvent("Change", (Ctrl, *) => OnComboChange(Ctrl))
+    
     BrowseBtn := MyGui.Add("Button", "x+10 yp w80", Lang.GuiBrowseBtn)
     
     MyGui.Add("Text", "xs+20 yp+45 cGray", Lang.GuiSupportLabel)
@@ -228,7 +257,7 @@ ShowGUI() {
     UnregBtn := MyGui.Add("Button", "x+20 yp w190 h40", Lang.GuiUnregBtn)
     
     ; Define button callbacks
-    BrowseBtn.OnEvent("Click", (*) => OnBrowse(ToolEdit))
+    BrowseBtn.OnEvent("Click", (*) => OnBrowse(ToolCombo))
     RegBtn.OnEvent("Click", (*) => RegisterMenu())
     UnregBtn.OnEvent("Click", (*) => UnregisterMenu())
     
@@ -236,10 +265,52 @@ ShowGUI() {
     MyGui.Show("w490")
 }
 
-OnBrowse(EditCtrl) {
+OnComboChange(Ctrl) {
+    SelectedFile := Ctrl.Text
+    If (SelectedFile != "") {
+        IniWrite(SelectedFile, ConfigFile, "Settings", "DiffTool")
+        UpdateRegistryIcon(SelectedFile)
+    }
+}
+
+OnBrowse(Ctrl) {
     SelectedFile := FileSelect(3, , Lang.SelectToolTitle, Lang.SelectToolFilter)
     If (SelectedFile != "") {
-        EditCtrl.Text := SelectedFile
+        ; Load current history
+        HistoryStr := IniRead(ConfigFile, "Settings", "History", "")
+        HistoryList := []
+        If (HistoryStr != "") {
+            Loop Parse, HistoryStr, "|" {
+                If (A_LoopField != "") {
+                    HistoryList.Push(A_LoopField)
+                }
+            }
+        }
+        
+        ; Check if it already exists
+        Exists := False
+        For Item in HistoryList {
+            If (Item = SelectedFile) {
+                Exists := True
+                Break
+            }
+        }
+        
+        If (!Exists) {
+            HistoryList.Push(SelectedFile)
+            ; Build history string
+            NewHistoryStr := ""
+            For Item in HistoryList {
+                NewHistoryStr .= (NewHistoryStr = "" ? "" : "|") . Item
+            }
+            IniWrite(NewHistoryStr, ConfigFile, "Settings", "History")
+            
+            ; Re-populate ComboBox
+            Ctrl.Delete()
+            Ctrl.Add(HistoryList)
+        }
+        
+        Ctrl.Text := SelectedFile
         IniWrite(SelectedFile, ConfigFile, "Settings", "DiffTool")
         UpdateRegistryIcon(SelectedFile)
     }
