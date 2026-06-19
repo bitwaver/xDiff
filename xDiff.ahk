@@ -124,16 +124,28 @@ CompareWithLeft(RightPath) {
                 Lang.DebugRightPath RightPath
     OutputDebug(DebugMsg "`n")
     
-    ; Launch Meld diff tool
-    MeldPath := "C:\Program Files\Meld\Meld.exe"
-    If FileExist(MeldPath) {
+    ; Launch diff tool
+    DiffTool := IniRead(ConfigFile, "Settings", "DiffTool", "")
+    
+    ; If not configured or not found, try default Meld locations
+    If (DiffTool = "" || !FileExist(DiffTool)) {
+        If FileExist("E:\Program Files\Meld\Meld.exe") {
+            DiffTool := "E:\Program Files\Meld\Meld.exe"
+        } Else If FileExist("C:\Program Files\Meld\Meld.exe") {
+            DiffTool := "C:\Program Files\Meld\Meld.exe"
+        } Else {
+            DiffTool := "E:\Program Files\Meld\Meld.exe" ; Fallback label reference
+        }
+    }
+    
+    If FileExist(DiffTool) {
         Try {
-            Run('"' MeldPath '" "' LeftPath '" "' RightPath '"')
+            Run('"' DiffTool '" "' LeftPath '" "' RightPath '"')
         } Catch Error as err {
             MsgBox(Lang.ErrMeldLaunchFailed err.Message, Lang.ErrTitle, "Iconx")
         }
     } Else {
-        MsgBox(Lang.ErrMeldNotFound MeldPath Lang.ErrMeldFallbackMsg DebugMsg, Lang.ErrTitle, "Iconx")
+        MsgBox(Lang.ErrMeldNotFound DiffTool Lang.ErrMeldFallbackMsg DebugMsg, Lang.ErrTitle, "Iconx")
     }
 }
 
@@ -153,9 +165,15 @@ RegisterMenu() {
     Classes := ["*", "Directory"]
     
     ; Determine icon path
-    IconPath := "C:\Program Files\Meld\Meld.exe"
-    If !FileExist(IconPath) {
-        IconPath := "shell32.dll,22" ; Fallback system icon
+    IconPath := IniRead(ConfigFile, "Settings", "DiffTool", "")
+    If (IconPath = "" || !FileExist(IconPath)) {
+        If FileExist("E:\Program Files\Meld\Meld.exe") {
+            IconPath := "E:\Program Files\Meld\Meld.exe"
+        } Else If FileExist("C:\Program Files\Meld\Meld.exe") {
+            IconPath := "C:\Program Files\Meld\Meld.exe"
+        } Else {
+            IconPath := "shell32.dll,22" ; Fallback system icon
+        }
     }
     
     Try {
@@ -223,5 +241,22 @@ OnBrowse(EditCtrl) {
     If (SelectedFile != "") {
         EditCtrl.Text := SelectedFile
         IniWrite(SelectedFile, ConfigFile, "Settings", "DiffTool")
+        UpdateRegistryIcon(SelectedFile)
+    }
+}
+
+UpdateRegistryIcon(IconPath) {
+    If (IconPath = "" || !FileExist(IconPath))
+        Return
+        
+    Classes := ["*", "Directory"]
+    For Cls in Classes {
+        Try {
+            ; Check if registered by reading command subkey
+            RegRead("HKCU\Software\Classes\" Cls "\shell\xDiffSelectLeft\command")
+            ; Update the Icon value
+            RegWrite(IconPath, "REG_SZ", "HKCU\Software\Classes\" Cls "\shell\xDiffSelectLeft", "Icon")
+            RegWrite(IconPath, "REG_SZ", "HKCU\Software\Classes\" Cls "\shell\xDiffCompare", "Icon")
+        }
     }
 }
