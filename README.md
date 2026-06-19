@@ -7,7 +7,8 @@ You can select one file/folder as the "Left" comparison target and then compare 
 ## Features
 
 - **No Admin Privileges Required**: Registers context menu entries under `HKEY_CURRENT_USER` (HKCU).
-- **Meld Integration**: Automatically invokes Meld (`E:\Program Files\Meld\Meld.exe`) to perform comparisons on files or directories.
+- **Multi-language Support**: Automatically detects and switches between English and Chinese (Simplified/Traditional) UI/Menu text based on system locale settings.
+- **Meld Integration**: Automatically invokes Meld (`C:\Program Files\Meld\Meld.exe`) to perform comparisons on files or directories.
 - **Silent Left Item Selection**: Selecting the left item is done silently without annoying popups or system notifications.
 - **Context Menu Icons**: Automatically sets the Meld icon for context menu items if installed, with a clean system fallback.
 - **Management GUI**: Simply run the script without arguments to open a clean GUI to register/unregister the shell menu easily.
@@ -16,7 +17,7 @@ You can select one file/folder as the "Left" comparison target and then compare 
 ## Requirements
 
 - [AutoHotkey v2](https://www.autohotkey.com/)
-- [Meld for Windows](https://meldmerge.org/) (Default installation directory assumed: `E:\Program Files\Meld\Meld.exe`)
+- [Meld for Windows](https://meldmerge.org/) (Default installation directory assumed: `C:\Program Files\Meld\Meld.exe`)
 
 ## Usage
 
