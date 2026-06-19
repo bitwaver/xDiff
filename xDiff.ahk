@@ -125,7 +125,7 @@ CompareWithLeft(RightPath) {
     OutputDebug(DebugMsg "`n")
     
     ; Launch Meld diff tool
-    MeldPath := "E:\Program Files\Meld\Meld.exe"
+    MeldPath := "C:\Program Files\Meld\Meld.exe"
     If FileExist(MeldPath) {
         Try {
             Run('"' MeldPath '" "' LeftPath '" "' RightPath '"')
